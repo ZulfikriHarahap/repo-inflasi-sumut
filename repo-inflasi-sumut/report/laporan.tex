@@ -1,0 +1,277 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+\begin{document}
+
+\title{Klasifikasi Inflasi Bulanan Kabupaten/Kota di Provinsi Sumatera Utara Menggunakan KNN, Naive Bayes, Decision Tree, dan SVM}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} M. Affan Apyga}
+\IEEEauthorblockA{\textit{Fakultas Ilmu Komputer dan Teknologi Informasi} \\
+\textit{Universitas Sumatera Utara}\\
+Medan, Indonesia \\
+NIM: [isi]}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Zulfikri Harahap}
+\IEEEauthorblockA{\textit{Fakultas Ilmu Komputer dan Teknologi Informasi} \\
+\textit{Universitas Sumatera Utara}\\
+Medan, Indonesia \\
+NIM: [isi]}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Deryal Rasky}
+\IEEEauthorblockA{\textit{Fakultas Ilmu Komputer dan Teknologi Informasi} \\
+\textit{Universitas Sumatera Utara}\\
+Medan, Indonesia \\
+NIM: [isi]}
+}
+
+\maketitle
+
+\begin{abstract}
+Inflasi bulanan merupakan indikator penting bagi perencanaan kebijakan ekonomi daerah. Penelitian ini mengklasifikasikan apakah inflasi bulanan suatu kabupaten/kota di Provinsi Sumatera Utara bernilai positif. Data berasal dari Badan Pusat Statistik (BPS) Provinsi Sumatera Utara untuk tahun 2024, 2025, dan 2026 (Januari--September), dengan 256 observasi setelah pembuatan fitur inflasi bulan sebelumnya. Empat algoritma dibandingkan menggunakan 5-fold cross-validation: K-Nearest Neighbors, Gaussian Naive Bayes, Decision Tree, dan Support Vector Machine. Decision Tree memperoleh F1-macro tertinggi (0,550), jauh di atas baseline kelas mayoritas (0,389), meskipun akurasinya (0,660) hanya sedikit di atas baseline (0,637). Hasil ini menunjukkan bahwa model mampu mengenali kelas minoritas, tetapi sinyal prediksi dari fitur sederhana masih lemah.
+\end{abstract}
+
+\begin{IEEEkeywords}
+klasifikasi, inflasi, cross-validation, Decision Tree, Sumatera Utara
+\end{IEEEkeywords}
+
+\section{Pendahuluan}
+\subsection{Latar Belakang}
+Inflasi mencerminkan perubahan harga barang dan jasa secara umum dari waktu ke waktu. Di tingkat daerah, inflasi dapat berbeda antarwilayah karena perbedaan struktur ekonomi, pasokan, dan permintaan. Pemantauan inflasi di tingkat kabupaten/kota penting bagi pemerintah daerah dalam mengambil keputusan pengendalian harga, terutama untuk komoditas pangan yang memiliki pengaruh besar terhadap daya beli masyarakat.
+
+Di sisi lain, inflasi bulanan sering kali berfluktuasi dan dipengaruhi banyak faktor yang sulit diukur secara langsung. Pendekatan pembelajaran mesin dapat digunakan untuk mempelajari pola dari data historis, meskipun hasilnya tetap bergantung pada kualitas dan kelengkapan data yang tersedia.
+
+\subsection{Rumusan Masalah dan Tujuan}
+Penelitian ini berfokus pada pertanyaan berikut: sejauh mana inflasi bulanan suatu kabupaten/kota di Sumatera Utara dapat diprediksi arahnya (positif atau tidak) menggunakan fitur sederhana, yaitu wilayah, bulan, dan inflasi bulan sebelumnya. Tujuannya adalah membandingkan empat algoritma klasifikasi dengan validasi silang, dan menilai apakah model memberikan peningkatan yang berarti dibandingkan tebakan mayoritas.
+
+\subsection{Kontribusi}
+Kontribusi penelitian ini adalah penyusunan dataset panel inflasi bulanan delapan wilayah di Sumatera Utara dari sumber resmi, perbandingan empat algoritma dengan metrik yang sesuai untuk data tidak seimbang, serta pembahasan terbuka mengenai keterbatasan prediksi inflasi berbasis fitur sederhana.
+
+\section{Metodologi}
+\subsection{Data}
+Data yang digunakan adalah Perkembangan Inflasi 8 Kabupaten/Kota IHK di Provinsi Sumatera Utara (2022=100) yang dirilis oleh Badan Pusat Statistik (BPS) Provinsi Sumatera Utara \cite{bps}. Data terdiri dari tiga berkas: tahun 2024 (Januari--Desember), tahun 2025 (Januari--Desember), dan tahun 2026 (Januari--September). Setiap berkas memuat nilai inflasi bulanan dalam persen untuk delapan wilayah, yaitu Kabupaten Labuhanbatu, Kabupaten Karo, Kabupaten Deli Serdang, Kota Sibolga, Kota Pematang Siantar, Kota Medan, Kota Padangsidimpuan, dan Kota Gunungsitoli.
+
+Tabel~\ref{tab:data} merangkum jumlah observasi per tahun setelah pra-pemrosesan.
+
+\begin{table}[htbp]
+\caption{Jumlah observasi per tahun}
+\label{tab:data}
+\centering
+\begin{tabular}{lcc}
+\toprule
+Tahun & Bulan tersedia & Observasi \\
+\midrule
+2024 & Januari--Desember & 96 \\
+2025 & Januari--Desember & 96 \\
+2026 & Januari--September & 72 \\
+\midrule
+Total & & 264 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Tabel~\ref{tab:desk} menyajikan statistik deskriptif inflasi bulanan per wilayah dengan 264 observasi sebelum pembuatan fitur lag. Gambar~\ref{fig:deret} memperlihatkan pergerakan inflasi bulanan seluruh wilayah dari Januari 2024 sampai September 2026.
+
+\begin{table}[htbp]
+\caption{Statistik deskriptif inflasi bulanan per wilayah (\%)}
+\label{tab:desk}
+\centering
+\begin{tabular}{lccccc}
+\toprule
+Wilayah & Rata-rata & Std & Min & Maks & Positif (\%) \\
+\midrule
+Kab. Deli Serdang & 0,26 & 0,78 & $-1{,}35$ & 1,72 & 63,6 \\
+Kab. Karo & 0,22 & 0,66 & $-1{,}01$ & 1,64 & 69,7 \\
+Kab. Labuhanbatu & 0,35 & 0,90 & $-1{,}23$ & 2,14 & 66,7 \\
+Kota Gunungsitoli & 0,36 & 1,39 & $-2{,}37$ & 6,94 & 57,6 \\
+Kota Medan & 0,23 & 0,55 & $-0{,}79$ & 1,54 & 63,6 \\
+Kota Padangsidimpuan & 0,31 & 0,64 & $-0{,}81$ & 1,90 & 63,6 \\
+Kota Pematang Siantar & 0,33 & 0,49 & $-0{,}55$ & 1,29 & 66,7 \\
+Kota Sibolga & 0,32 & 0,71 & $-0{,}81$ & 2,94 & 66,7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Rata-rata inflasi bulanan seluruh wilayah berkisar antara 0,22\% sampai 0,36\%, dengan simpangan baku terbesar pada Kota Gunungsitoli (1,39), yang dipengaruhi oleh nilai ekstrem bulan Desember 2025. Secara keseluruhan, 64,8\% observasi bernilai positif. Proporsi ini sedikit berbeda antar tahun, yaitu 68,8\% pada 2024, 58,3\% pada 2025, dan 68,1\% pada 2026 (Januari--September), yang mengindikasikan bahwa pola inflasi tidak sepenuhnya stabil dari tahun ke tahun.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{deret_waktu.png}
+\caption{Inflasi bulanan per kabupaten/kota di Sumatera Utara, Januari 2024--September 2026. Garis putus-putus menandai nilai nol.}
+\label{fig:deret}
+\end{figure}
+
+\subsection{Pra-pemrosesan dan Rekayasa Fitur}
+Ketiga berkas dibaca dalam format lebar, yaitu satu baris per wilayah dan satu kolom per bulan, lalu diubah ke format panjang dengan satu baris per kombinasi wilayah dan bulan. Baris agregat ``Sumatera Utara'' dibuang agar tidak tercampur dengan data kabupaten/kota, dan nilai ``-'' yang menandakan bulan belum tersedia juga dibuang.
+
+Target klasifikasi adalah variabel biner $y$, yang bernilai 1 jika inflasi bulan tersebut lebih dari nol dan 0 jika tidak. Fitur yang digunakan adalah wilayah (dikodekan dengan one-hot), bulan, dan inflasi bulan sebelumnya ($lag1$), yang dibuat per wilayah dengan menggeser nilai inflasi satu bulan ke belakang. Baris pertama setiap wilayah dibuang karena tidak memiliki nilai sebelumnya, sehingga tersisa 256 observasi, dengan 163 kelas positif dan 93 kelas tidak positif. Inflasi bulan yang sama tidak digunakan sebagai fitur untuk menghindari kebocoran target, karena fitur tersebut sama dengan informasi dasar target.
+
+\subsection{Algoritma}
+Empat algoritma dibandingkan. K-Nearest Neighbors dengan $k=5$ mengklasifikasikan data baru berdasarkan mayoritas label dari lima tetangga terdekat \cite{cover1967}. Gaussian Naive Bayes mengasumsikan fitur saling bebas dan berdistribusi normal dalam setiap kelas. Decision Tree dengan kedalaman maksimum 4 membangun aturan bertingkat berdasarkan ambang nilai fitur \cite{quinlan1986}. Support Vector Machine dengan kernel RBF dan $C=1{,}0$ mencari batas keputusan yang memaksimalkan margin antarkelas \cite{cortes1995}.
+
+Fitur numerik distandarisasi dan fitur wilayah dikodekan dengan one-hot encoding. Keduanya digabungkan dalam satu pipeline sehingga transformasi hanya dipelajari dari data latih di setiap fold. Implementasi menggunakan scikit-learn \cite{pedregosa2011} dengan Python.
+
+Tabel~\ref{tab:hyper} merangkum parameter yang digunakan pada setiap model. Parameter dipilih secara tetap dan tidak dilakukan pencarian parameter terbaik (\emph{hyperparameter tuning}), agar perbandingan antar algoritma dilakukan pada kondisi yang sama dan dapat diulang.
+
+\begin{table}[htbp]
+\caption{Parameter setiap model}
+\label{tab:hyper}
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+Model & Parameter & Keterangan \\
+\midrule
+KNN & $k=5$, Minkowski ($p=2$) & Bobot seragam, jarak Euclidean \\
+Gaussian NB & $\text{var\_smoothing}=10^{-9}$ & Nilai bawaan scikit-learn \\
+Decision Tree & $\text{max\_depth}=4$, Gini & Membatasi kompleksitas \\
+SVM & RBF, $C=1{,}0$, $\gamma=$ \texttt{scale} & Nilai bawaan untuk $\gamma$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Kedalaman Decision Tree dibatasi hingga 4 untuk mengurangi risiko \emph{overfitting} pada data yang berjumlah sekitar 256 observasi. Nilai $k=5$ pada KNN dipilih sebagai nilai ganjil yang umum digunakan untuk menghindari hasil seri pada pemungutan suara mayoritas.
+
+\subsection{Protokol Evaluasi}
+Evaluasi menggunakan 5-fold stratified cross-validation dengan pengacakan dan random state 42, sehingga proporsi kelas terjaga di setiap fold. Metrik yang dilaporkan adalah akurasi dan F1-macro, masing-masing sebagai rata-rata dan standar deviasi dari lima fold. F1-macro dipilih karena merata-ratakan F1 kedua kelas tanpa memperhitungkan proporsi, sehingga lebih informatif daripada akurasi pada data yang tidak seimbang. Sebagai pembanding, digunakan baseline yang selalu memprediksi kelas mayoritas, yaitu positif.
+
+Metrik yang digunakan didefinisikan dari matriks kebingungan (\emph{confusion matrix}) dengan notasi $TP$, $TN$, $FP$, dan $FN$ untuk jumlah prediksi benar positif, benar negatif, salah positif, dan salah negatif. Akurasi dihitung sebagai
+\begin{equation}
+\text{Akurasi} = \frac{TP + TN}{TP + TN + FP + FN}.
+\end{equation}
+Untuk setiap kelas $c$, presisi dan recall dihitung sebagai $P_c = TP_c/(TP_c + FP_c)$ dan $R_c = TP_c/(TP_c + FN_c)$, serta F1 sebagai $F1_c = 2P_cR_c/(P_c + R_c)$. F1-macro adalah rata-rata sederhana dari $F1_c$ untuk kedua kelas,
+\begin{equation}
+\text{F1-macro} = \frac{1}{2}\sum_{c \in \{0,1\}} F1_c.
+\end{equation}
+
+\subsection{Etika dan Keterbatasan Data}
+Data yang digunakan merupakan statistik agregat yang dipublikasikan secara terbuka oleh BPS dan tidak memuat informasi pribadi individu, sehingga risiko privasi dalam penelitian ini dapat dianggap rendah. Sumber data dan tanggal pengambilan dicantumkan agar penelitian dapat diulang. Keterbatasan data antara lain periode yang belum lengkap pada tahun 2026, jumlah wilayah yang terbatas, dan adanya nilai ekstrem seperti Kota Gunungsitoli pada Desember 2025 sebesar 6,94\%.
+
+Seluruh eksperimen dijalankan di Google Colab dengan Python 3 dan pustaka scikit-learn, pandas, dan matplotlib. Kode dan data dapat dijalankan ulang dengan urutan sel yang sama untuk memperoleh hasil yang identik.
+
+\section{Hasil}
+\subsection{Perbandingan Model}
+Tabel~\ref{tab:hasil} merangkum hasil 5-fold cross-validation pada 256 observasi. Nilai ditampilkan sebagai rata-rata $\pm$ standar deviasi.
+
+\begin{table}[htbp]
+\caption{Hasil 5-fold cross-validation}
+\label{tab:hasil}
+\centering
+\begin{tabular}{lcc}
+\toprule
+Model & Akurasi & F1-macro \\
+\midrule
+Decision Tree (depth=4) & $0{,}660 \pm 0{,}027$ & $\mathbf{0{,}550 \pm 0{,}069}$ \\
+KNN ($k=5$) & $0{,}605 \pm 0{,}035$ & $0{,}490 \pm 0{,}039$ \\
+Naive Bayes (Gaussian) & $0{,}558 \pm 0{,}072$ & $0{,}490 \pm 0{,}062$ \\
+SVM (RBF) & $0{,}645 \pm 0{,}013$ & $0{,}437 \pm 0{,}026$ \\
+\midrule
+Baseline (mayoritas) & $0{,}637$ & $0{,}389$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Decision Tree memperoleh F1-macro tertinggi. Namun, nilai ini tidak sepenuhnya stabil, karena standar deviasinya sebesar 0,069. Model SVM memiliki akurasi cukup tinggi, tetapi F1-macro terendah, yang menandakan bahwa prediksinya cenderung mengikuti kelas mayoritas.
+
+\subsection{Confusion Matrix Decision Tree}
+Gambar~\ref{fig:cm} menunjukkan confusion matrix Decision Tree dari prediksi cross-validation. Dari 93 kasus tidak positif, 24 kasus dikenali dengan benar. Dari 163 kasus positif, 145 kasus dikenali dengan benar. Recall kelas tidak positif sekitar 26\%, sedangkan recall kelas positif sekitar 89\%.
+
+Tabel~\ref{tab:prf} merinci presisi, recall, dan F1 untuk masing-masing kelas, dihitung dari confusion matrix agregat. Nilai F1-macro pada agregat (0,562) sedikit berbeda dari rata-rata F1-macro antar-fold pada Tabel~\ref{tab:hasil} (0,550), karena perhitungan rata-rata dilakukan per fold, bukan dari seluruh observasi sekaligus.
+
+\begin{table}[htbp]
+\caption{Metrik per kelas Decision Tree dari confusion matrix agregat}
+\label{tab:prf}
+\centering
+\begin{tabular}{lccc}
+\toprule
+Kelas & Presisi & Recall & F1 \\
+\midrule
+Tidak positif & 0,571 & 0,258 & 0,356 \\
+Positif & 0,678 & 0,890 & 0,769 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.75\columnwidth]{cm_dt.png}
+\caption{Confusion matrix Decision Tree (depth=4) pada 5-fold cross-validation.}
+\label{fig:cm}
+\end{figure}
+
+\subsection{Analisis Kesalahan per Wilayah}
+Untuk melihat apakah kesalahan terkonsentrasi pada wilayah tertentu, akurasi Decision Tree dihitung per wilayah dari prediksi cross-validation. Tabel~\ref{tab:wil} menunjukkan bahwa setiap wilayah memiliki 32 observasi setelah pembuatan fitur lag. Akurasi berkisar antara 59,4\% (Kabupaten Labuhanbatu) sampai 68,8\% (Kabupaten Deli Serdang, Kabupaten Karo, Kota Medan, dan Kota Sibolga). Rentang ini relatif sempit, sehingga kesalahan model tidak terpusat pada satu wilayah saja, melainkan tersebar hampir merata.
+
+\begin{table}[htbp]
+\caption{Akurasi Decision Tree per wilayah (5-fold cross-validation)}
+\label{tab:wil}
+\centering
+\begin{tabular}{lcc}
+\toprule
+Wilayah & Observasi & Akurasi (\%) \\
+\midrule
+Kab. Deli Serdang & 32 & 68,8 \\
+Kab. Karo & 32 & 68,8 \\
+Kab. Labuhanbatu & 32 & 59,4 \\
+Kota Gunungsitoli & 32 & 65,6 \\
+Kota Medan & 32 & 68,8 \\
+Kota Padangsidimpuan & 32 & 65,6 \\
+Kota Pematang Siantar & 32 & 62,5 \\
+Kota Sibolga & 32 & 68,8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Kabupaten Labuhanbatu memiliki akurasi terendah, yang sejalan dengan rata-rata inflasinya yang lebih tinggi (0,35\%) dan simpangan baku yang besar (0,90). Pola ini menunjukkan bahwa wilayah dengan fluktuasi yang lebih tinggi lebih sulit diprediksi menggunakan fitur yang sama.
+
+\subsection{Aturan Keputusan}
+Decision Tree yang dilatih pada seluruh data terutama membagi data berdasarkan inflasi bulan sebelumnya ($lag1$), bulan, dan indikator wilayah Kota Gunungsitoli. Aturan ini mencerminkan pola persistensi inflasi, yaitu kecenderungan inflasi tinggi diikuti oleh inflasi tinggi pada bulan berikutnya, meskipun dengan ambang yang berbeda untuk setiap wilayah dan bulan.
+
+\section{Pembahasan}
+\subsection{Akurasi dan Metrik Tidak Seimbang}
+Akurasi Decision Tree (0,660) hanya sedikit di atas baseline (0,637), tetapi F1-macro-nya (0,550) jauh di atas baseline (0,389). Perbedaan ini menunjukkan bahwa akurasi saja dapat menyesatkan pada data yang kelasnya tidak seimbang. Baseline yang selalu memprediksi kelas positif sudah memperoleh akurasi 0,637 karena 63,7\% data memang bernilai positif. Peningkatan yang sebenarnya terlihat pada kemampuan mengenali kelas minoritas, meskipun kemampuan itu masih terbatas.
+
+\subsection{Kelemahan pada Kelas Minoritas}
+Sebagian besar kesalahan Decision Tree adalah prediksi positif untuk kasus yang sebenarnya tidak positif, yaitu 69 kasus. Pola ini menunjukkan bahwa model masih cenderung condong ke kelas mayoritas. Pembobotan kelas, misalnya dengan \texttt{class\_weight='balanced'}, dapat menjadi langkah lanjutan untuk meningkatkan recall kelas tidak positif, meskipun belum diuji dalam penelitian ini.
+
+\subsection{Perbandingan Antar Algoritma}
+Selisih F1-macro Decision Tree dengan KNN dan Naive Bayes (sekitar 0,060) kira-kira sama dengan standar deviasi masing-masing model. Dengan lima fold dan 256 observasi, perbedaan ini belum cukup kuat untuk menyatakan bahwa Decision Tree secara pasti lebih baik. Kesimpulan yang lebih aman adalah bahwa Decision Tree menunjukkan kecenderungan lebih baik dalam kondisi penelitian ini.
+
+KNN dan Naive Bayes memiliki F1-macro yang sama, yaitu 0,490. KNN dipengaruhi oleh skala dan kepadatan data di sekitar titik uji, sementara Naive Bayes mengasumsikan kebebasan antarfitur yang jelas tidak sepenuhnya terpenuhi, karena fitur seperti inflasi bulan sebelumnya saling terkait dengan target dan dengan fitur lainnya. SVM dengan kernel RBF memiliki akurasi yang cukup baik, tetapi F1-macro-nya paling rendah, sehingga model ini tampaknya kurang mampu mengenali kelas tidak positif.
+
+\subsection{Stabilitas Pola antar Tahun}
+Proporsi observasi positif tidak konstan antar tahun, yaitu 68,8\% pada 2024, 58,3\% pada 2025, dan 68,1\% pada 2026. Rata-rata inflasi pada 2025 juga lebih tinggi (0,46\%) dibandingkan 2024 (0,21\%) dan 2026 (0,20\%). Pergeseran ini berarti bahwa distribusi kelas dapat berubah dari satu periode ke periode lain. Model yang dilatih pada satu periode belum tentu mempertahankan performanya pada periode berikutnya, sehingga hasil cross-validation acak perlu diinterpretasikan secara hati-hati.
+
+\subsection{Keterbatasan Penelitian}
+Pertama, validasi K-fold acak memungkinkan bulan yang berdekatan berada di data latih dan data uji sekaligus, sehingga hasil dapat bersifat optimistis. Validasi berbasis deret waktu seperti TimeSeriesSplit lebih tepat untuk data seperti ini dan perlu diuji pada penelitian lanjutan. Kedua, fitur terbatas, karena tidak memasukkan indikator ekonomi lain seperti harga komoditas, kurs, atau kebijakan harga. Ketiga, jumlah data relatif kecil dan periode 2026 belum lengkap. Keempat, terdapat nilai ekstrem, seperti Kota Gunungsitoli pada Desember 2025, yang dapat memengaruhi pembelajaran model.
+
+\subsection{Ancaman Validitas}
+Dari sisi validitas internal, pembuatan fitur lag dilakukan per wilayah dan baris pertama setiap wilayah dibuang, sehingga tidak ada informasi dari masa depan yang masuk ke fitur. Namun, karena validasi dilakukan secara acak, observasi dari bulan yang sama di wilayah berbeda dapat berada di data latih dan data uji sekaligus. Dari sisi validitas eksternal, hasil ini hanya berlaku untuk delapan wilayah dan periode 2024--2026 di Sumatera Utara, dan belum tentu berlaku untuk provinsi lain atau periode yang lebih panjang.
+
+\subsection{Implikasi}
+Bagi pemerintah daerah, hasil ini menunjukkan bahwa model sederhana berbasis inflasi bulan sebelumnya belum dapat dijadikan dasar tunggal untuk memperkirakan arah inflasi. Namun, informasi bahwa inflasi cenderung berkelanjutan dari satu bulan ke bulan berikutnya tetap berguna sebagai sinyal awal untuk memantau wilayah yang inflasinya tinggi atau berfluktuasi, seperti Kabupaten Labuhanbatu dan Kota Gunungsitoli.
+
+\section{Kesimpulan}
+Penelitian ini membandingkan empat algoritma klasifikasi untuk memprediksi apakah inflasi bulanan kabupaten/kota di Sumatera Utara bernilai positif. Decision Tree memperoleh F1-macro tertinggi, yaitu 0,550. Seluruh model memiliki F1-macro di atas baseline (0,389), tetapi Decision Tree memberikan selisih terbesar. Meskipun demikian, akurasi model hanya sedikit di atas tebakan mayoritas, dan kelas tidak positif masih sulit dikenali.
+
+Hasil ini menunjukkan bahwa fitur sederhana belum cukup untuk memprediksi arah inflasi bulanan dengan andal. Penelitian lanjutan dapat menggunakan validasi berbasis deret waktu, menambahkan indikator ekonomi lain, dan menguji pembobotan kelas untuk meningkatkan pengenalan kelas minoritas.
+
+Untuk penelitian selanjutnya, peneliti dapat (1) menguji model dengan validasi berbasis deret waktu yang menjaga urutan kronologis data, (2) menambahkan indikator harga komoditas pangan dan kurs sebagai fitur tambahan, (3) membandingkan pembobotan kelas dengan teknik resampling, dan (4) memperluas cakupan wilayah dan periode data agar hasil lebih kuat secara statistik.
+
+\begin{thebibliography}{00}
+\bibitem{bps} Badan Pusat Statistik Provinsi Sumatera Utara, ``Perkembangan Inflasi 8 Kabupaten/Kota IHK di Provinsi Sumatera Utara (2022=100),'' BPS Sumatera Utara, [isi tanggal akses]. [Daring]. Tersedia: https://sumut.bps.go.id
+\bibitem{cover1967} T. Cover and P. Hart, ``Nearest neighbor pattern classification,'' \emph{IEEE Transactions on Information Theory}, vol. 13, no. 1, pp. 21--27, 1967.
+\bibitem{quinlan1986} J. R. Quinlan, ``Induction of decision trees,'' \emph{Machine Learning}, vol. 1, no. 1, pp. 81--106, 1986.
+\bibitem{cortes1995} C. Cortes and V. Vapnik, ``Support-vector networks,'' \emph{Machine Learning}, vol. 20, no. 3, pp. 273--297, 1995.
+\bibitem{pedregosa2011} F. Pedregosa \emph{et al.}, ``Scikit-learn: Machine learning in Python,'' \emph{Journal of Machine Learning Research}, vol. 12, pp. 2825--2830, 2011.
+\end{thebibliography}
+
+\end{document}
