@@ -6,9 +6,9 @@ Tugas Proyek Kelompok, Machine Learning Fundamental (Modul 9).
 
 | Nama | NIM |
 |---|---|
-| M. Affan Apyga | [isi] |
-| Zulfikri Harahap | [isi] |
-| Deryal Rasky | [isi] |
+| M. Affan Apyga | 24141141 |
+| Zulfikri Harahap | 24141123 |
+| Deryal Rasky | 24141121 |
 
 ## Tujuan
 
